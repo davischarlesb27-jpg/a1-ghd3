@@ -1,11 +1,9 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>HoopLab - Basketball Play Designer</title>
 
   <style>
@@ -106,25 +104,14 @@
 
   <div id="court-container"></div>
 
-  <!-- Load D3.js -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 
   <script>
-
-    // =========================================
-    // STEP 1: CREATE SVG DRAWING AREA
-    // =========================================
-
     const svg = d3.select("#court-container")
       .append("svg")
       .attr("viewBox", "0 0 800 650");
 
-
-    // =========================================
-    // STEP 2: DRAW BASKETBALL COURT
-    // =========================================
-
-    // Court background
+    // Drawing the court and its markings
     svg.append("rect")
       .attr("x", 100)
       .attr("y", 70)
@@ -134,7 +121,6 @@
       .attr("stroke", "white")
       .attr("stroke-width", 4);
 
-    // Paint / key
     svg.append("rect")
       .attr("x", 302)
       .attr("y", 70)
@@ -144,15 +130,12 @@
       .attr("stroke", "white")
       .attr("stroke-width", 3);
 
-    // Three-point line
     svg.append("path")
-      .attr("d",
-        "M170 70 L170 216 A230 230 0 0 0 630 216 L630 70")
+      .attr("d", "M170 70 L170 216 A230 230 0 0 0 630 216 L630 70")
       .attr("fill", "none")
       .attr("stroke", "white")
       .attr("stroke-width", 3);
 
-    // Free-throw circle
     svg.append("circle")
       .attr("cx", 400)
       .attr("cy", 300)
@@ -161,7 +144,6 @@
       .attr("stroke", "white")
       .attr("stroke-width", 3);
 
-    // Backboard
     svg.append("line")
       .attr("x1", 365)
       .attr("y1", 112)
@@ -170,7 +152,6 @@
       .attr("stroke", "white")
       .attr("stroke-width", 6);
 
-    // Basketball hoop
     svg.append("circle")
       .attr("cx", 400)
       .attr("cy", 132)
@@ -179,21 +160,14 @@
       .attr("stroke", "#e95f29")
       .attr("stroke-width", 5);
 
-    // Direction arrow at bottom of court
     svg.append("polygon")
       .attr("points", "390,563 410,563 400,543")
       .attr("fill", "#fff3ce");
 
 
-    // =========================================
-    // STEP 3: CREATE SVG ROUTE LAYER
-    // =========================================
-
-    // Routes appear beneath the players
     const routeLayer = svg.append("g")
       .attr("class", "routes");
 
-    // Arrowhead for passing lines
     const defs = svg.append("defs");
 
     defs.append("marker")
@@ -209,75 +183,33 @@
       .attr("fill", "#f97316");
 
 
-    // =========================================
-    // STEP 4: PLAYER STARTING POSITIONS
-    // =========================================
-
+    // Starting positions for the offense
     const playerData = [
-      {
-        id: 1,
-        role: "Point Guard",
-        x: 400,
-        y: 505
-      },
-      {
-        id: 2,
-        role: "Shooting Guard",
-        x: 195,
-        y: 300
-      },
-      {
-        id: 3,
-        role: "Small Forward",
-        x: 605,
-        y: 300
-      },
-      {
-        id: 4,
-        role: "Power Forward",
-        x: 170,
-        y: 145
-      },
-      {
-        id: 5,
-        role: "Center",
-        x: 468,
-        y: 198
-      }
+      {id: 1, role: "Point Guard", x: 400, y: 505},
+      {id: 2, role: "Shooting Guard", x: 195, y: 300},
+      {id: 3, role: "Small Forward", x: 605, y: 300},
+      {id: 4, role: "Power Forward", x: 170, y: 145},
+      {id: 5, role: "Center", x: 468, y: 198}
     ];
-
-
-    // =========================================
-    // STEP 5: DRAW THE PLAYERS
-    // =========================================
 
     const players = svg.selectAll(".player")
       .data(playerData)
       .enter()
       .append("g")
       .attr("class", "player")
-      .attr("transform",
-        d => `translate(${d.x}, ${d.y})`);
+      .attr("transform", d => `translate(${d.x}, ${d.y})`);
 
-    // Blue player circles
     players.append("circle")
       .attr("r", 21)
       .attr("fill", "#2563eb")
       .attr("stroke", "white")
       .attr("stroke-width", 2);
 
-    // Player numbers
     players.append("text")
       .text(d => d.id);
 
-    // Display position on hover
     players.append("title")
       .text(d => d.role);
-
-
-    // =========================================
-    // STEP 6: DRAW THE BASKETBALL
-    // =========================================
 
     const ball = svg.append("circle")
       .attr("cx", 428)
@@ -288,185 +220,145 @@
       .attr("stroke-width", 2);
 
 
-    // =========================================
-    // STEP 7: ANIMATION HELPER FUNCTIONS
-    // =========================================
-
     let running = false;
 
     const runButton = d3.select("#run-play");
     const resetButton = d3.select("#reset-play");
     const status = d3.select("#play-status");
 
-    // Draw dashed movement paths
     function drawRoute(pathData, color) {
-
-      routeLayer.append("path")
+      return routeLayer.append("path")
         .attr("d", pathData)
         .attr("fill", "none")
         .attr("stroke", color)
         .attr("stroke-width", 4)
         .attr("stroke-dasharray", "9 7")
         .attr("stroke-linecap", "round");
-
     }
 
-    // Move an individual player using D3
     function movePlayer(id, x, y, duration) {
+      return players
+        .filter(d => d.id === id)
+        .transition()
+        .duration(duration)
+        .ease(d3.easeCubicInOut)
+        .attr("transform", `translate(${x}, ${y})`)
+        .end();
+    }
+
+    // I use the SVG path to move players along curves
+    function movePlayerAlongPath(id, path, duration) {
+      const pathLength = path.node().getTotalLength();
 
       return players
         .filter(d => d.id === id)
         .transition()
         .duration(duration)
         .ease(d3.easeCubicInOut)
-        .attr("transform",
-          `translate(${x}, ${y})`)
-        .end();
+        .attrTween("transform", () => t => {
+          const point = path.node()
+            .getPointAtLength(t * pathLength);
 
+          return `translate(${point.x}, ${point.y})`;
+        })
+        .end();
     }
 
-
-    // =========================================
-    // STEP 8: RESET PLAY
-    // =========================================
-
     function resetPlay() {
-
       if (running) return;
 
-      // Restore original player positions
       players.interrupt()
-        .attr("transform",
-          d => `translate(${d.x}, ${d.y})`);
+        .attr("transform", d => `translate(${d.x}, ${d.y})`);
 
-      // Restore ball to point guard
       ball.interrupt()
         .attr("cx", 428)
         .attr("cy", 505);
 
-      // Remove movement and passing paths
       routeLayer.selectAll("*").remove();
 
       status.text("Ready to run the play.");
-
     }
 
 
-    // =========================================
-    // STEP 9: PICK-AND-ROLL PLAY
-    // =========================================
-
     async function runPickAndRoll() {
-
       if (running) return;
 
       resetPlay();
-
       running = true;
 
       runButton.property("disabled", true);
       resetButton.property("disabled", true);
 
       try {
+        // 3 clears the wing while 5 comes up to set the screen
+        status.text("1. Player 3 moves to the corner while 5 sets the screen");
 
-        // -------------------------------------
-        // PHASE 1: CENTER SETS THE SCREEN
-        // -------------------------------------
+        drawRoute("M605 300 L630 145", "#a78bfa");
+        drawRoute("M468 198 L485 466", "#fde047");
 
-        status.text("1. Center comes up to set the screen");
-
-        // Center starts on the right low block
-        // and moves toward the point guard
-
-        drawRoute(
-          "M468 198 L442 462",
-          "#fde047"
-        );
-
-        await movePlayer(
-          5,
-          442,
-          462,
-          1400
-        );
-
-
-        // -------------------------------------
-        // PHASE 2: POINT GUARD USES SCREEN
-        // -------------------------------------
-
-        status.text("2. Point guard uses the screen");
-
-        // Player 1 dribbles toward right side
-        drawRoute(
-          "M400 505 L525 360",
-          "#2563eb"
-        );
-
-        // Player and basketball move together
         await Promise.all([
-
-          movePlayer(
-            1,
-            525,
-            360,
-            1400
-          ),
-
-          ball.transition()
-            .duration(1400)
-            .ease(d3.easeCubicInOut)
-            .attr("cx", 553)
-            .attr("cy", 360)
-            .end()
-
+          movePlayer(3, 630, 145, 1300),
+          movePlayer(5, 485, 466, 1300)
         ]);
 
 
-        // -------------------------------------
-        // PHASE 3: CENTER ROLLS TO BASKET
-        // -------------------------------------
+        // 1 curls around the screen and fills 3's original spot
+        status.text("2. Point guard uses the screen to reach the right wing");
 
+        const guardPath = drawRoute(
+          "M400 505 C420 475 440 445 480 435 C535 415 570 335 605 300",
+          "#2563eb"
+        );
+
+        const guardLength = guardPath.node().getTotalLength();
+
+        await Promise.all([
+          movePlayerAlongPath(1, guardPath, 1700),
+
+          ball.transition()
+            .duration(1700)
+            .ease(d3.easeCubicInOut)
+            .attrTween("cx", () => t => {
+              const point = guardPath.node()
+                .getPointAtLength(t * guardLength);
+              return point.x + 24;
+            })
+            .attrTween("cy", () => t => {
+              const point = guardPath.node()
+                .getPointAtLength(t * guardLength);
+              return point.y;
+            })
+            .end()
+        ]);
+
+
+        // 5 rolls back to the hoop
         status.text("3. Center rolls toward the basket");
 
-        drawRoute(
-          "M442 462 L438 216",
+        const rollPath = drawRoute(
+          "M485 466 Q490 325 435 220",
           "#fde047"
         );
 
-        await movePlayer(
-          5,
-          438,
-          216,
-          1300
-        );
+        await movePlayerAlongPath(5, rollPath, 1300);
 
 
-        // -------------------------------------
-        // PHASE 4: POINT GUARD PASSES
-        // -------------------------------------
-
+        // 1 passes to 5 after reaching the right wing
         status.text("4. Point guard passes to the center");
 
-        // Curved passing path
         const pass = routeLayer.append("path")
-          .attr("d",
-            "M553 360 Q558 240 463 216")
+          .attr("d", "M629 300 Q565 210 459 220")
           .attr("fill", "none")
           .attr("stroke", "#f97316")
           .attr("stroke-width", 4)
           .attr("marker-end", "url(#pass-arrow)");
 
-        const length = pass.node().getTotalLength();
+        const passLength = pass.node().getTotalLength();
 
-        // Hide path initially
-        pass.attr("stroke-dasharray", length)
-          .attr("stroke-dashoffset", length);
+        pass.attr("stroke-dasharray", passLength)
+          .attr("stroke-dashoffset", passLength);
 
-        // Draw passing path and move ball
-        // along the curve simultaneously
         await Promise.all([
-
           pass.transition()
             .duration(1000)
             .ease(d3.easeLinear)
@@ -476,50 +368,27 @@
           ball.transition()
             .duration(1000)
             .ease(d3.easeLinear)
-
-            .attrTween("cx", () => t =>
-              pass.node()
-                .getPointAtLength(t * length).x
-            )
-
-            .attrTween("cy", () => t =>
-              pass.node()
-                .getPointAtLength(t * length).y
-            )
-
+            .attrTween("cx", () => t => {
+              return pass.node()
+                .getPointAtLength(t * passLength).x;
+            })
+            .attrTween("cy", () => t => {
+              return pass.node()
+                .getPointAtLength(t * passLength).y;
+            })
             .end()
-
         ]);
 
-
-        // -------------------------------------
-        // PLAY FINISHED
-        // -------------------------------------
-
-        status.text(
-          "Play complete! Center receives the pass."
-        );
+        status.text("Play complete! Center receives the pass.");
 
       } finally {
-
         running = false;
-
         runButton.property("disabled", false);
         resetButton.property("disabled", false);
-
       }
-
     }
 
-
-    // =========================================
-    // STEP 10: BUTTON EVENTS
-    // =========================================
-
-    // Run button
     runButton.on("click", runPickAndRoll);
-
-    // Reset button
     resetButton.on("click", resetPlay);
 
   </script>
